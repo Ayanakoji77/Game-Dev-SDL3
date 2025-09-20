@@ -3,7 +3,7 @@
   "configurePresets": [
     {
       "name": "linux-debug",
-      "displayName": "Linux Debug",
+      "displayName": "linux Debug",
       "description": "Build with debug information using GCC/Clang",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/debug",
@@ -24,6 +24,16 @@
         "CMAKE_C_COMPILER": "clang",
         "CMAKE_CXX_COMPILER": "clang++"
       }
+    }
+  ],
+    "buildPresets": [
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release"
     }
   ]
 }

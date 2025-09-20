@@ -17,4 +17,4 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Include the sub-project where the executable is actually defined.
-add_subdirectory("sdl3-demo")
+add_subdirectory("src")
