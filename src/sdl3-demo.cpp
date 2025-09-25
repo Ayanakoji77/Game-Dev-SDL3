@@ -17,6 +17,10 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+
+#include "animation.h"
+#include "timer.h"
 
 struct SDLState
 {
@@ -30,8 +34,23 @@ struct SDLState
     const char* basePath;
 };
 
-void cleanup(SDLState& win);
+void cleanup(SDLState& state);
 bool intialize(SDLState& state);
+
+struct Resources
+{
+    const int ANIM_PLAYER_IDLE = 0;
+    std::vector<Animation> playerAnims;
+
+    std::vector<SDL_Texture*> textures;
+    SDL_Texture* loadTexture()
+
+        void load(SDLState& state)
+    {
+        playerAnims.resize(5);
+        playerAnims[ANIM_PLAYER_IDLE] = Animation(8, 1.6f);
+    }
+};
 int main(int argc, char* argv[])
 {
     // Intialization of the state sdl

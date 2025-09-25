@@ -12,5 +12,10 @@ class Animation
 
     float getLentgth() const { return timer.getLength(); }
 
-    int currentFrame() const { return static_cast<int>(timer.getTime() / timer.getLength()); }
+    int currentFrame() const
+    {
+        return static_cast<int>(timer.getTime() / timer.getLength() * frameCount);
+    }
+
+    void step(float deltaTime) { timer.step(deltaTime); }
 };
