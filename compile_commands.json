@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/sbehera/Desktop/game-development/Game Dev using SDL3/build/debug",
+  "command": "/usr/lib64/ccache/clang++ -g -std=c++20 -Wall -Wextra -Wpedantic -o src/CMakeFiles/galaxy.dir/sdl3-demo.cpp.o -c \"/home/sbehera/Desktop/game-development/Game Dev using SDL3/src/sdl3-demo.cpp\"",
+  "file": "/home/sbehera/Desktop/game-development/Game Dev using SDL3/src/sdl3-demo.cpp",
+  "output": "/home/sbehera/Desktop/game-development/Game Dev using SDL3/build/debug/src/CMakeFiles/galaxy.dir/sdl3-demo.cpp.o"
+}
+]

@@ -1,6 +1,7 @@
 # Find the SDL3 library on the system.
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+find_package(glm REQUIRED)
 
 # Create the executable from its source file.
 add_executable(galaxy "sdl3-demo.cpp")
@@ -15,4 +16,4 @@ add_custom_command(
   VERBATIM)
 
 # IMPORTANT: Link the executable against the SDL3 library.
-target_link_libraries(galaxy PRIVATE SDL3::SDL3 SDL3_image::SDL3_image)
+target_link_libraries(galaxy PRIVATE SDL3::SDL3 SDL3_image::SDL3_image glm::glm)
