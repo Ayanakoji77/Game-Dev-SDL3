@@ -3,4 +3,5 @@ build-windows/
 build-macos/
 
 *.cache
-
+20.txt
+keymaps.txt

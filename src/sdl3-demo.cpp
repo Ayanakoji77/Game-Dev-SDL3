@@ -17,6 +17,9 @@
 
 #include <array>
 #include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <glm/fwd.hpp>
 #include <glm/glm.hpp>
 #include <string>
 #include <vector>
@@ -28,16 +31,18 @@ struct SDLState
 {
     SDL_Window* MyWindow;
     SDL_Renderer* renderer;
-    int GAME_HEIGHT;
-    int GAME_WIDTH;
+    int GAME_HEIGHT, GAME_WIDTH, logWidth, logHeight;
+    const bool* keys;
+    SDLState() : keys(SDL_GetKeyboardState(nullptr)) {}
 
-    int logWidth;
-    int logHeight;
     const char* basePath;
 };
 
 const size_t LAYER_IDX_LEVEL = 0;
 const size_t LAYER_IDX_CHARACTERS = 1;
+const int MAP_ROWS = 5;
+const int MAP_COLS = 50;
+const int TILE_SIZE = 32;
 
 struct GameState
 {
@@ -52,9 +57,10 @@ struct GameState
 struct Resources
 {
     const int ANIM_PLAYER_IDLE = 0;
+    const int ANIM_PLAYER_RUN = 1;
     std::vector<Animation> playerAnims;
 
-    SDL_Texture* idleTex;
+    SDL_Texture *idleTex, *runTex;
     std::vector<SDL_Texture*> textures;
     SDL_Texture* loadTexture(SDLState& state, const std::string& filepath)
     {
@@ -69,9 +75,10 @@ struct Resources
     void load(SDLState& state)
     {
         playerAnims.resize(5);
-        playerAnims[ANIM_PLAYER_IDLE] = Animation(4, 0.8f);
-
-        idleTex = loadTexture(state, "data/Sprite-0001-2t.png");
+        playerAnims[ANIM_PLAYER_IDLE] = Animation(7, 1.2f);
+        playerAnims[ANIM_PLAYER_RUN] = Animation(8, 0.6f);
+        idleTex = loadTexture(state, "data/Sprite-0001.png");
+        runTex = loadTexture(state, "data/Run-sheet.png");
     }
 
     void unload()
@@ -86,6 +93,8 @@ struct Resources
 void cleanup(SDLState& state);
 bool intialize(SDLState& state);
 void drawObject(const SDLState& state, GameState& gs, GameObject& obj, float deltaTime);
+void update(const SDLState& state, GameState& gs, Resources& res, GameObject& obj, float deltaTime);
+void createTiles(const SDLState& state, GameState& gs, const Resources& res);
 
 int main(int argc, char* argv[])
 {
@@ -106,15 +115,7 @@ int main(int argc, char* argv[])
 
     // setup game data
     GameState gs;
-    GameObject player;
-    player.type = ObjectType::player;
-    player.texture = res.idleTex;
-    player.animations = res.playerAnims;
-    player.currentAnimation = res.ANIM_PLAYER_IDLE;
-    gs.layers[LAYER_IDX_CHARACTERS].push_back(player);
-
-    const bool* keys = SDL_GetKeyboardState(nullptr);
-
+    createTiles(state, gs, res);
     uint64_t prevTime = SDL_GetTicks();
 
     // start the game loop
@@ -143,6 +144,8 @@ int main(int argc, char* argv[])
         {
             for (GameObject& obj : layer)
             {
+                update(state, gs, res, obj, deltaTime);
+                // update the animation
                 if (obj.currentAnimation != -1)
                 {
                     obj.animations[obj.currentAnimation].step(deltaTime);
@@ -231,7 +234,7 @@ bool intialize(SDLState& state)
 void drawObject(const SDLState& state, GameState& gs, GameObject& obj, float deltaTime)
 {
     const float spriteSize = 32;
-    float srcX = obj.currentAnimation != 1
+    float srcX = obj.currentAnimation != -1
                      ? obj.animations[obj.currentAnimation].currentFrame() * spriteSize
                      : 0.0f;
 
@@ -240,4 +243,118 @@ void drawObject(const SDLState& state, GameState& gs, GameObject& obj, float del
 
     SDL_FlipMode flipMode = obj.direction == -1 ? SDL_FLIP_HORIZONTAL : SDL_FLIP_NONE;
     SDL_RenderTextureRotated(state.renderer, obj.texture, &src, &dest, 0, nullptr, flipMode);
+}
+
+void update(const SDLState& state, GameState& gs, Resources& res, GameObject& obj, float deltaTime)
+{
+    if (obj.type == ObjectType::player)
+    {
+        float currentDirection = 0;
+        if (state.keys[SDL_SCANCODE_A])
+        {
+            currentDirection += -1;
+        }
+        if (state.keys[SDL_SCANCODE_D])
+        {
+            currentDirection += 1;
+        }
+
+        if (currentDirection)
+        {
+            obj.direction = currentDirection;
+        }
+
+        switch (obj.data.player.state)
+        {
+            case PlayerState::idle:
+            {
+                if (currentDirection)
+                {
+                    obj.data.player.state = PlayerState::running;
+                    obj.texture = res.runTex;
+                    obj.currentAnimation = res.ANIM_PLAYER_RUN;
+                }
+                else
+                {
+                    // deaccelatere
+                    if (obj.velocity.x)
+                    {
+                        const float factor = obj.velocity.x > 0 ? -1.5f : 1.5f;
+                        float amount = factor * obj.acceleration.x * deltaTime;
+
+                        if (std::abs(obj.velocity.x) < std::abs(amount))
+                        {
+                            obj.velocity.x = 0;
+                        }
+                        else
+                        {
+                            obj.velocity.x += amount;
+                        }
+                    }
+                }
+                break;
+            }
+            case PlayerState::running:
+            {
+                if (!currentDirection)
+                {
+                    obj.data.player.state = PlayerState::idle;
+                    obj.texture = res.idleTex;
+                    obj.currentAnimation = res.ANIM_PLAYER_IDLE;
+                }
+                break;
+            }
+        }
+
+        // add acceleration to velocity
+
+        obj.velocity += currentDirection * obj.acceleration * deltaTime;
+        if (std::abs(obj.velocity.x) > obj.maxSpeedX)
+        {
+            obj.velocity.x = currentDirection * obj.maxSpeedX;
+        }
+        // add velocity to position
+        obj.position += obj.velocity * deltaTime;
+    }
+}
+
+void createTiles(const SDLState& state, GameState& gs, const Resources& res)
+{
+    /*
+     * 1.Ground
+     * 2.Panel
+     * 3.Enemy
+     * 4.Player
+     * 5.Grass
+     * 6.Brick
+     */
+    short map[MAP_ROWS][MAP_COLS];
+
+    memset(map, 0, MAP_ROWS * MAP_COLS);
+    map[4][0] = 4;
+
+    for (int i = 0; i < MAP_ROWS; i++)
+    {
+        for (int j = 0; j < MAP_COLS; j++)
+        {
+            switch (map[i][j])
+            {
+                case 4:  // player
+                {
+                    GameObject player;
+                    player.position =
+                        glm::vec2(j * TILE_SIZE, state.logHeight - (MAP_ROWS - i) * TILE_SIZE);
+                    player.type = ObjectType::player;
+                    player.data.player = PlayerData();
+                    player.texture = res.idleTex;
+                    player.animations = res.playerAnims;
+                    player.currentAnimation = res.ANIM_PLAYER_IDLE;
+                    player.acceleration = glm::vec2(250, 0);
+                    player.maxSpeedX = 80;
+                    gs.layers[LAYER_IDX_CHARACTERS].push_back(player);
+                    break;
+                }
+            }
+        }
+    }
 }
