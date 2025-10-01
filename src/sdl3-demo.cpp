@@ -60,7 +60,7 @@ struct Resources
     const int ANIM_PLAYER_RUN = 1;
     std::vector<Animation> playerAnims;
 
-    SDL_Texture *idleTex, *runTex;
+    SDL_Texture *idleTex, *runTex, *groundTex, *panelTex, *brickTex, *grassTex;
     std::vector<SDL_Texture*> textures;
     SDL_Texture* loadTexture(SDLState& state, const std::string& filepath)
     {
@@ -79,6 +79,10 @@ struct Resources
         playerAnims[ANIM_PLAYER_RUN] = Animation(8, 0.6f);
         idleTex = loadTexture(state, "data/Sprite-0001.png");
         runTex = loadTexture(state, "data/Run-sheet.png");
+        groundTex = loadTexture(state, "data/Ground.png");
+        panelTex = loadTexture(state, "data/Panel.png");
+        brickTex = loadTexture(state, "data/Brick.png");
+        grassTex = loadTexture(state, "data/Grass.png");
     }
 
     void unload()
@@ -247,6 +251,11 @@ void drawObject(const SDLState& state, GameState& gs, GameObject& obj, float del
 
 void update(const SDLState& state, GameState& gs, Resources& res, GameObject& obj, float deltaTime)
 {
+    if (obj.dynamic)
+    {
+        obj.velocity += glm::vec2(0, 500) * deltaTime;
+    }
+
     if (obj.type == ObjectType::player)
     {
         float currentDirection = 0;
@@ -313,11 +322,23 @@ void update(const SDLState& state, GameState& gs, Resources& res, GameObject& ob
         {
             obj.velocity.x = currentDirection * obj.maxSpeedX;
         }
-        // add velocity to position
-        obj.position += obj.velocity * deltaTime;
+    }
+
+    // add velocity to position
+    obj.position += obj.velocity * deltaTime;
+}
+void checkCollison(const SDLState& state, GameState& gs, Resources& res, GameObject& a,
+                   GameObject& b, float deltaTime)
+{
+    SDL_FRect reactA{.x = a.position.x, .y = a.position.y, .w = TILE_SIZE, .h = TILE_SIZE};
+    SDL_FRect reactB{.x = b.position.x, .y = b.position.y, .w = TILE_SIZE, .h = TILE_SIZE};
+
+    SDL_FRect reactC{0};
+
+    if (SDL_GetRectIntersectionFloat(&reactA, &reactB, &reactC))
+    {
     }
 }
-
 void createTiles(const SDLState& state, GameState& gs, const Resources& res)
 {
     /*
@@ -331,26 +352,48 @@ void createTiles(const SDLState& state, GameState& gs, const Resources& res)
     short map[MAP_ROWS][MAP_COLS];
 
     memset(map, 0, MAP_ROWS * MAP_COLS);
-    map[4][0] = 4;
+    map[0][0] = 4;
+    map[4][0] = map[4][1] = map[4][2] = map[3][1] = 1;
 
+    // r = rows
+    // c = columns
+    const auto createObject = [&state](int r, int c, SDL_Texture* tex, ObjectType type)
+    {
+        GameObject o;
+        o.type = type;
+
+        o.position = glm::vec2(c * TILE_SIZE, state.logHeight - (MAP_ROWS - r) * TILE_SIZE);
+
+        o.texture = tex;
+        return o;
+    };
     for (int i = 0; i < MAP_ROWS; i++)
     {
         for (int j = 0; j < MAP_COLS; j++)
         {
             switch (map[i][j])
             {
+                case 1:  // Ground
+                {
+                    GameObject o = createObject(i, j, res.groundTex, ObjectType::level);
+                    gs.layers[LAYER_IDX_LEVEL].push_back(o);
+                    break;
+                }
+                case 2:  // Panel
+                {
+                    GameObject o = createObject(i, j, res.panelTex, ObjectType::level);
+                    gs.layers[LAYER_IDX_LEVEL].push_back(o);
+                    break;
+                }
                 case 4:  // player
                 {
-                    GameObject player;
-                    player.position =
-                        glm::vec2(j * TILE_SIZE, state.logHeight - (MAP_ROWS - i) * TILE_SIZE);
-                    player.type = ObjectType::player;
+                    GameObject player = createObject(i, j, res.idleTex, ObjectType::player);
                     player.data.player = PlayerData();
-                    player.texture = res.idleTex;
                     player.animations = res.playerAnims;
                     player.currentAnimation = res.ANIM_PLAYER_IDLE;
                     player.acceleration = glm::vec2(250, 0);
                     player.maxSpeedX = 80;
+                    player.dynamic = true;
                     gs.layers[LAYER_IDX_CHARACTERS].push_back(player);
                     break;
                 }
