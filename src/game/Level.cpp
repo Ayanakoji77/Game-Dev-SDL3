@@ -13,7 +13,7 @@
 
 #include "core/camera.h"
 #include "core/resourceManager.h"
-#include "driver/SerialController.h"
+#include "enemy.h"
 #include "game/bullet.h"
 #include "game/gameobject.h"
 #include "player.h"
@@ -94,6 +94,12 @@ void Level::LoadMap(ResourceManager* res)
                     brick.position = {x, y};
                     brick.tag = GameObject::Tag::level;
                 }
+                else if (type == 3)
+                {
+                    auto enemy = std::make_unique<Enemy>(res->GetTexture("enemy"));
+                    enemy->position = {x, y};
+                    layers[LAYER_IDX_CHARACTERS].push_back(std::move(enemy));
+                }
             }
         }
     };
@@ -104,7 +110,7 @@ void Level::LoadMap(ResourceManager* res)
     SDL_assert_release(this->player != nullptr && "No Player intialized check itup ");
 }
 
-void Level::Update(float deltaTime, const bool* keys, SerialController* serialController)
+void Level::Update(float deltaTime, const bool* keys)
 {
     for (auto& layer : layers)
     {
@@ -120,7 +126,6 @@ void Level::Update(float deltaTime, const bool* keys, SerialController* serialCo
 
     if (player)
     {
-        player->update(deltaTime, keys, serialController);
         camera->Follow(player->position);
     }
 
@@ -260,10 +265,40 @@ void Level::CheckCollisions(float deltaTime)
             }
         }
     }
+    // Bullets vs Enemies
+    for (auto& b : bullets)
+    {
+        if (b.GetState() == BulletState::Inactive)
+            continue;
+
+        SDL_FRect bRect = {b.position.x + b.collider.x, b.position.y + b.collider.y, b.collider.w,
+                           b.collider.h};
+        for (auto& character : layers[LAYER_IDX_CHARACTERS])
+        {
+            if (character->tag == GameObject::Tag::enemy)
+            {
+                Enemy* enemy = static_cast<Enemy*>(character.get());
+                if (enemy->getState() == EnemyState::Dead)
+                    continue;
+
+                SDL_FRect eRect = {enemy->position.x + enemy->collider.x,
+                                   enemy->position.y + enemy->collider.y, enemy->collider.w,
+                                   enemy->collider.h};
+                SDL_FRect intersection;
+
+                if (SDL_GetRectIntersectionFloat(&bRect, &eRect, &intersection))
+                {
+                    enemy->takeDamage();
+                    b.SetState(BulletState::Colliding);
+                }
+            }
+        }
+    }
 }
 void Level::ResolveCollision(GameObject& a, GameObject& b, float deltaTime, SDL_FRect intersection)
 {
-    if ((a.tag == GameObject::Tag::player || a.tag == GameObject::Tag::bullet) &&
+    if ((a.tag == GameObject::Tag::player || a.tag == GameObject::Tag::bullet ||
+         a.tag == GameObject::Tag::enemy) &&
         b.tag == GameObject::Tag::level)
     {
         // Horizontal Collision
@@ -274,6 +309,12 @@ void Level::ResolveCollision(GameObject& a, GameObject& b, float deltaTime, SDL_
             else if (a.velocity.x < 0)
                 a.position.x += intersection.w;
             a.velocity.x = 0;
+
+            // Reversing the enemy if it hits a wall sideways
+            if (a.tag == GameObject::Tag::enemy)
+            {
+                static_cast<Enemy*>(&a)->reverseDirection();
+            }
         }
         // Vertical Collision
         else
@@ -282,8 +323,10 @@ void Level::ResolveCollision(GameObject& a, GameObject& b, float deltaTime, SDL_
             {
                 a.position.y -= intersection.h;
                 a.velocity.y = 0;
-                Player* p = static_cast<Player*>(&a);
-                p->setGrounded(true);
+                if (a.tag == GameObject::Tag::player)
+                    static_cast<Player*>(&a)->setGrounded(true);
+                if (a.tag == GameObject::Tag::enemy)
+                    static_cast<Enemy*>(&a)->setGrounded(true);
             }
             else if (a.velocity.y < 0)
             {
@@ -344,6 +387,8 @@ void Level::SetMap(short map[MAP_ROWS][MAP_COLS], short background[MAP_ROWS][MAP
     }
 
     map[3][2] = 4;
+    map[3][25] = 3;
+    map[3][28] = 3;
 }
 
 void Level::UpdateGroundState()

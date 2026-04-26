@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "core/animation.h"
-#include "driver/SerialController.h"
 #include "game/gameobject.h"
 enum class BulletState
 {
@@ -25,7 +24,7 @@ class Bullet : public GameObject
 
    public:
     Bullet(SDL_Texture* atlasTexture, glm::vec2 position, float direction);
-    void update(float deltaTime, const bool* keys, SerialController* controller = nullptr) override;
+    void update(float deltaTime, const bool* keys) override;
     void Render(SDL_Renderer* renderer, glm::vec2 offset) override;
     BulletState GetState() { return state; }
     void SetState(BulletState c_state) { state = c_state; }

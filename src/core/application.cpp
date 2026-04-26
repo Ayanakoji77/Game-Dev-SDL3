@@ -10,7 +10,6 @@
 #include <SDL3/SDL_video.h>
 
 #include "core/resourceManager.h"
-#include "driver/SerialController.h"
 
 bool Application::Initialize()
 {
@@ -22,9 +21,6 @@ bool Application::Initialize()
                                  nullptr);
         initSuccess = false;
     }
-    // Intialization of SerialController
-    this->serialController = new SerialController();
-    this->serialController->Connect("/dev/ttyACM0");
 
     this->basePath = SDL_GetBasePath();
     if (this->basePath == nullptr)
@@ -67,6 +63,7 @@ bool Application::Initialize()
     resourceManager->LoadTexture("background_1", "data/Background_1.png");
     resourceManager->LoadTexture("background_2", "data/Background_2.png");
     resourceManager->LoadTexture("bullet", "data/bullet-sheet.png");
+    resourceManager->LoadTexture("enemy", "data/player.png");
 
     // intialize input
     this->keys = SDL_GetKeyboardState(nullptr);
@@ -122,15 +119,11 @@ void Application::Run()
                 debugMode = !debugMode;
             }
         }
-        // serial controller update
-        if (serialController)
-        {
-            serialController->Update();
-        }
+
         // game update level
         if (currentLevel)
         {
-            currentLevel->Update(deltaTime, keys, serialController);
+            currentLevel->Update(deltaTime, keys);
         }
 
         // render game

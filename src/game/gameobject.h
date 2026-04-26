@@ -5,8 +5,6 @@
 #include <glm/ext/vector_float2.hpp>
 #include <glm/glm.hpp>
 
-#include "driver/SerialController.h"
-
 class GameObject
 {
    public:
@@ -26,7 +24,7 @@ class GameObject
     } tag = Tag::level;
     virtual ~GameObject() = default;
 
-    virtual void update(float deltaTime, const bool* keys, SerialController* controller = nullptr)
+    virtual void update(float deltaTime, const bool* keys)
     {
         if (dynamic)
         {
@@ -40,7 +38,6 @@ class GameObject
             return;
 
         SDL_FRect dst = {position.x + offset.x, position.y + offset.y, collider.w, collider.h};
-
         SDL_RenderTexture(renderer, texture, nullptr, &dst);
     }
 };

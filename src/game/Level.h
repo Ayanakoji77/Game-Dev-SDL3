@@ -8,7 +8,7 @@
 #include "bullet.h"
 #include "core/camera.h"
 #include "core/resourceManager.h"
-#include "driver/SerialController.h"
+#include "enemy.h"
 #include "game/player.h"
 #include "gameobject.h"
 
@@ -41,7 +41,7 @@ class Level
 
    public:
     void LoadMap(ResourceManager* res);
-    void Update(float deltaTime, const bool* keys, SerialController* serialController);
+    void Update(float deltaTime, const bool* keys);
     void Render(SDL_Renderer* renderer, bool debugMode);
     void ParallaxBackgroundDraw(SDL_Renderer* renderer);
     void SetMap(short map[MAP_ROWS][MAP_COLS], short background[MAP_ROWS][MAP_COLS],
