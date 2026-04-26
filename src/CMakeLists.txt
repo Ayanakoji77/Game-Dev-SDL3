@@ -3,9 +3,23 @@ find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
 find_package(glm REQUIRED)
 
-# Create the executable from its source file.
-add_executable(galaxy "sdl3-demo.cpp")
+set(ENGINE_SOURCES
+    core/animation.h core/timer.h core/application.cpp core/application.h
+    core/resourceManager.cpp core/resourceManager.h)
 
+set(GAME_SORCES
+    game/gameobject.h
+    game/Level.cpp
+    game/Level.h
+    game/player.cpp
+    game/player.h
+    game/bullet.h
+    game/bullet.cpp
+    driver/SerialController.cpp
+    driver/SerialController.h)
+# Create the executable from its source file.
+add_executable(galaxy "main.cpp" ${ENGINE_SOURCES} ${GAME_SORCES})
+target_include_directories(galaxy PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 # Copy data directory to build output
 add_custom_command(
   TARGET galaxy

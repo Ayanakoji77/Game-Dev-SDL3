@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/sbehera/Desktop/c++_project/Bilateral STM32-SDL3 Interface/game/build/debug",
-  "command": "/usr/lib64/ccache/clang++ -I\"/home/sbehera/Desktop/c++_project/Bilateral STM32-SDL3 Interface/game/src\" -g -std=c++20 -Wall -Wextra -Wpedantic -o src/CMakeFiles/galaxy.dir/main.cpp.o -c \"/home/sbehera/Desktop/c++_project/Bilateral STM32-SDL3 Interface/game/src/main.cpp\"",
-  "file": "/home/sbehera/Desktop/c++_project/Bilateral STM32-SDL3 Interface/game/src/main.cpp",
-  "output": "/home/sbehera/Desktop/c++_project/Bilateral STM32-SDL3 Interface/game/build/debug/src/CMakeFiles/galaxy.dir/main.cpp.o"
-}
-]
