@@ -1,0 +1,1 @@
+/usr/lib64/ccache/c++ -Wl,--dependency-file=CMakeFiles/galaxy.dir/link.d "CMakeFiles/galaxy.dir/sdl3-demo.cpp.o" -o galaxy  -Wl,-rpath,/usr/local/lib64 /usr/lib64/libSDL3_image.so.0.2.4 /usr/local/lib64/libSDL3.so.0.3.0

@@ -1,7 +1,7 @@
 build/
 build-windows/
 build-macos/
-
+run.sh
 *.cache
 20.txt
 keymaps.txt
